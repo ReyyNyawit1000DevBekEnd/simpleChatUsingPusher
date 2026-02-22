@@ -1,25 +1,20 @@
 <?php
+ob_start();
 session_start();
+
 require 'vendor/autoload.php';
 require 'config.php';
 require 'db.php';
 
 if(!isset($_SESSION['user_id'])){
     http_response_code(403);
-    echo "Unauthorized";
-    exit;
+    exit("Unauthorized");
 }
 
 $user_id = $_SESSION['user_id'];
 
-$channel_name = $_POST['channel_name'];
-$socket_id = $_POST['socket_id'];
-
-/*
-Channel format:
-private-chat-33
-We need to extract conversation_id = 33
-*/
+$channel_name = $_POST['channel_name'] ?? '';
+$socket_id = $_POST['socket_id'] ?? '';
 
 if(!preg_match('/private-chat-(\d+)/', $channel_name, $matches)){
     http_response_code(403);
@@ -28,11 +23,11 @@ if(!preg_match('/private-chat-(\d+)/', $channel_name, $matches)){
 
 $conversation_id = intval($matches[1]);
 
-// Verify user belongs to conversation
 $stmt = $conn->prepare("
 SELECT id FROM conversations 
 WHERE id=? AND (buyer_id=? OR seller_id=?)
 ");
+
 $stmt->bind_param("iii", $conversation_id, $user_id, $user_id);
 $stmt->execute();
 
@@ -54,3 +49,4 @@ $pusher = new Pusher\Pusher(
 );
 
 echo $pusher->socket_auth($channel_name, $socket_id);
+ob_end_flush();
