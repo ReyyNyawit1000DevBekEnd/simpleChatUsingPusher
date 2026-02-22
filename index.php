@@ -1,4 +1,6 @@
 <?php
+echo "PHP WORKING";
+exit;
 session_start();
 require 'db.php';
 
