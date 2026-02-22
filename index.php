@@ -1,5 +1,5 @@
 <?php
-echo "PHP WORKING";
+echo "SERVER HIDUP 🔥";
 exit;
 session_start();
 require 'db.php';
