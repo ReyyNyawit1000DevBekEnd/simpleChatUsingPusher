@@ -1,4 +1,12 @@
 <?php
+session_set_cookie_params([
+    'lifetime' => 86400,
+    'path' => '/',
+    'secure' => true,
+    'httponly' => true,
+    'samesite' => 'None'
+]);
+
 session_start();
 require 'db.php';
 require 'config.php';
@@ -8,11 +16,10 @@ if(!isset($_SESSION['user_id'])){
     exit;
 }
 
-$user_id = $_SESSION['user_id'];
-$role = $_SESSION['role'];
+$user_id = intval($_SESSION['user_id']);
+$role = $_SESSION['role'] ?? 'user';
 
-$other_id = $_GET['user_id'] ?? 1;
-
+$other_id = intval($_GET['user_id'] ?? 1);
 // conversation check (both directions)
 $stmt = $conn->prepare("
 SELECT id FROM conversations 
@@ -398,10 +405,17 @@ var user_id = <?= $user_id ?>;
 
 var pusher = new Pusher(PUSHER_KEY, {
     cluster: PUSHER_CLUSTER,
+    forceTLS: true,
+    authEndpoint: "auth.php",
+    auth: {
+        withCredentials: true
+    }
+});
+    cluster: PUSHER_CLUSTER,
     authEndpoint: "auth.php"
 });
 
-var channel = pusher.subscribe("chat-test");
+var channel = pusher.subscribe("private-chat-" + conversation_id);
 
 $(document).ready(function(){
     $.get("fetch_messages.php", { conversation_id: conversation_id }, function(data){
