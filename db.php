@@ -2,15 +2,16 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-$host = getenv("MYSQLHOST");
-$user = getenv("MYSQLUSER");
-$pass = getenv("MYSQLPASSWORD");
-$db   = getenv("MYSQLDATABASE");
-$port = getenv("MYSQLPORT");
+$host = trim(getenv("MYSQLHOST"));
+$user = trim(getenv("MYSQLUSER"));
+$pass = trim(getenv("MYSQLPASSWORD"));
+$db   = trim(getenv("MYSQLDATABASE"));
+$port = trim(getenv("MYSQLPORT"));
 
 $conn = new mysqli($host, $user, $pass, $db, $port);
 
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    http_response_code(500);
+    exit("DB Connection Error");
 }
 ?>
