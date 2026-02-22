@@ -4,65 +4,109 @@ require 'vendor/autoload.php';
 require 'config.php';
 require 'db.php';
 
+header("Content-Type: application/json");
+
+/*
+=====================================
+CHECK SESSION
+=====================================
+*/
+
 if(!isset($_SESSION['user_id'])){
-    die("Unauthorized - No Session");
+    http_response_code(403);
+    exit(json_encode([
+        "error" => "unauthorized"
+    ]));
 }
 
-$conversation_id = intval($_POST['conversation_id']);
-$sender_id = $_SESSION['user_id']; // IMPORTANT FIX
-$message = trim($_POST['message']);
+$sender_id = intval($_SESSION['user_id']);
 
-if(empty($message)){
-    die("Empty message");
+$conversation_id = intval($_POST['conversation_id'] ?? 0);
+$message = trim($_POST['message'] ?? '');
+
+if($conversation_id <= 0 || empty($message)){
+    http_response_code(400);
+    exit(json_encode([
+        "error" => "invalid_request"
+    ]));
 }
 
-// verify user belongs to conversation
+/*
+=====================================
+VERIFY USER ACCESS CONVERSATION
+=====================================
+*/
+
 $stmt = $conn->prepare("
-SELECT id FROM conversations 
-WHERE id=? AND (buyer_id=? OR seller_id=?)
+SELECT id 
+FROM conversations 
+WHERE id=? 
+AND (buyer_id=? OR seller_id=?)
 ");
-$stmt->bind_param("iii", $conversation_id, $sender_id, $sender_id);
+
+$stmt->bind_param("iii",
+    $conversation_id,
+    $sender_id,
+    $sender_id
+);
+
 $stmt->execute();
 
 if($stmt->get_result()->num_rows == 0){
-    die("Unauthorized access");
+    http_response_code(403);
+    exit(json_encode([
+        "error" => "unauthorized_conversation"
+    ]));
 }
 
-// insert message
+/*
+=====================================
+INSERT MESSAGE
+=====================================
+*/
+
 $stmt = $conn->prepare("
-INSERT INTO messages (conversation_id, sender_id, message) 
+INSERT INTO messages 
+(conversation_id, sender_id, message) 
 VALUES (?,?,?)
 ");
-$stmt->bind_param("iis", $conversation_id, $sender_id, $message);
+
+$stmt->bind_param("iis",
+    $conversation_id,
+    $sender_id,
+    $message
+);
+
 $stmt->execute();
 
-$options = [
-    'cluster' => PUSHER_CLUSTER,
-    'useTLS' => true
-];
+/*
+=====================================
+PUSHER TRIGGER REALTIME
+=====================================
+*/
 
 $pusher = new Pusher\Pusher(
     PUSHER_KEY,
     PUSHER_SECRET,
     PUSHER_APP_ID,
-    $options
+    [
+        'cluster' => PUSHER_CLUSTER,
+        'useTLS' => true
+    ]
 );
 
 $data = [
-    'conversation_id' => $conversation_id,
-    'sender_id' => $sender_id,
-    'message' => $message
+    "conversation_id" => $conversation_id,
+    "sender_id" => $sender_id,
+    "message" => htmlspecialchars($message)
 ];
 
-$pusher->trigger('chat-test', 'new-message', $data);
-print_r([
-    "app_id" => PUSHER_APP_ID,
-    "key" => PUSHER_KEY,
-    "cluster" => PUSHER_CLUSTER
-]);
-exit;
+$pusher->trigger(
+    "private-chat-".$conversation_id,
+    "new-message",
+    $data
+);
 
-echo "sent";
-var_dump($pusher->trigger('private-chat-'.$conversation_id, 'new-message', $data));
-exit;
-?>
+echo json_encode([
+    "success" => true
+]);
