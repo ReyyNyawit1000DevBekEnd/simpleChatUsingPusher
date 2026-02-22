@@ -294,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form method="POST">
+            <form method="POST" action="index.php">
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <div class="input-wrapper">
@@ -336,7 +336,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
 
             <div class="signup-link">
-                Don't have an account? <a href="register.php">Sign up</a>
+                Don't have an account? <a href="auth.php?type=register">Sign up</a>
             </div>
         </div>
     </div>
