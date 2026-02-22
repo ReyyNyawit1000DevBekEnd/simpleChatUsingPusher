@@ -1,4 +1,5 @@
 <?php
+// ===== SESSION CONFIG (VERY IMPORTANT FOR RAILWAY HTTPS) =====
 session_set_cookie_params([
     'lifetime' => 86400,
     'path' => '/',
@@ -18,16 +19,15 @@ require 'db.php';
 
 /*
 =====================================
-CHECK SESSION LOGIN
+CHECK LOGIN SESSION
 =====================================
 */
 
 if (!isset($_SESSION['user_id'])) {
     http_response_code(403);
-    echo json_encode([
+    exit(json_encode([
         "error" => "unauthorized"
-    ]);
-    exit;
+    ]));
 }
 
 $user_id = intval($_SESSION['user_id']);
@@ -41,15 +41,14 @@ GET POST DATA
 $channel_name = $_POST['channel_name'] ?? '';
 $socket_id = $_POST['socket_id'] ?? '';
 
-if (empty($channel_name) || empty($socket_id)) {
+if (!$channel_name || !$socket_id) {
     http_response_code(400);
     exit;
 }
 
 /*
 =====================================
-VALIDATE CHANNEL
-Format: private-chat-123
+VALIDATE PRIVATE CHANNEL
 =====================================
 */
 
@@ -62,7 +61,7 @@ $conversation_id = intval($matches[1]);
 
 /*
 =====================================
-CHECK ACCESS CONVERSATION
+CHECK USER ACCESS
 =====================================
 */
 
