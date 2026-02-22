@@ -1,62 +1,15 @@
 <?php
-session_start();
 require 'vendor/autoload.php';
 require 'config.php';
 require 'db.php';
 
 header("Content-Type: application/json");
 
-/*
-=====================================
-CHECK SESSION
-=====================================
-*/
-
-if(!isset($_SESSION['user_id'])){
-    http_response_code(403);
-    exit(json_encode([
-        "error" => "unauthorized"
-    ]));
-}
-
-$sender_id = intval($_SESSION['user_id']);
-
-$conversation_id = intval($_POST['conversation_id'] ?? 0);
 $message = trim($_POST['message'] ?? '');
+$conversation_id = intval($_POST['conversation_id'] ?? 0);
 
-if($conversation_id <= 0 || empty($message)){
-    http_response_code(400);
-    exit(json_encode([
-        "error" => "invalid_request"
-    ]));
-}
-
-/*
-=====================================
-VERIFY USER ACCESS CONVERSATION
-=====================================
-*/
-
-$stmt = $conn->prepare("
-SELECT id 
-FROM conversations 
-WHERE id=? 
-AND (buyer_id=? OR seller_id=?)
-");
-
-$stmt->bind_param("iii",
-    $conversation_id,
-    $sender_id,
-    $sender_id
-);
-
-$stmt->execute();
-
-if($stmt->get_result()->num_rows == 0){
-    http_response_code(403);
-    exit(json_encode([
-        "error" => "unauthorized_conversation"
-    ]));
+if(empty($message)){
+    exit(json_encode(["error"=>"empty"]));
 }
 
 /*
@@ -66,10 +19,11 @@ INSERT MESSAGE
 */
 
 $stmt = $conn->prepare("
-INSERT INTO messages 
-(conversation_id, sender_id, message) 
+INSERT INTO messages (conversation_id, sender_id, message)
 VALUES (?,?,?)
 ");
+
+$sender_id = 0; // public chat mode
 
 $stmt->bind_param("iis",
     $conversation_id,
@@ -81,7 +35,7 @@ $stmt->execute();
 
 /*
 =====================================
-PUSHER TRIGGER REALTIME
+PUSHER PUBLIC TRIGGER
 =====================================
 */
 
@@ -90,23 +44,18 @@ $pusher = new Pusher\Pusher(
     PUSHER_SECRET,
     PUSHER_APP_ID,
     [
-        'cluster' => PUSHER_CLUSTER,
-        'useTLS' => true
+        "cluster" => PUSHER_CLUSTER,
+        "useTLS" => true
     ]
 );
 
-$data = [
-    "conversation_id" => $conversation_id,
-    "sender_id" => $sender_id,
-    "message" => htmlspecialchars($message)
-];
-
 $pusher->trigger(
-    "private-chat-".$conversation_id,
+    "public-chat",
     "new-message",
-    $data
+    [
+        "message" => htmlspecialchars($message),
+        "sender_id" => 0
+    ]
 );
 
-echo json_encode([
-    "success" => true
-]);
+echo json_encode(["success"=>true]);
