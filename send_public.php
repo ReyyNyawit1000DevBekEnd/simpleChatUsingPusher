@@ -19,94 +19,103 @@ $avatar = $_SESSION['avatar'] ?? "https://api.dicebear.com/7.x/bottts/svg?seed="
 
 /*
 =====================================
-TITLE SYSTEM
+XP + LEVEL SYSTEM
 =====================================
 */
 
-if(!isset($_SESSION['title'])){
-$_SESSION['title']="npc";
-}
-
-/* NEW USER AUTO TITLE */
-if(!isset($_SESSION['first_join'])){
-$_SESSION['first_join']=true;
-$_SESSION['title']="npc";
-}
+if(!isset($_SESSION['xp'])) $_SESSION['xp']=0;
+if(!isset($_SESSION['level'])) $_SESSION['level']=1;
+if(!isset($_SESSION['title'])) $_SESSION['title']="npc";
 
 /*
-TITLE LIST
+XP GAIN PER CHAT
 */
 
-$titles = [
-"npc",
-"knight",
-"earl",
-"archduke",
-"king",
-"emperor",
-"kang spoiler",
-"kang bokep",
-"developer",
-"etmin"
-];
+$_SESSION['xp'] += rand(5,15);
+
+/*
+LEVEL CALCULATION
+*/
+
+$levelUpXp = $_SESSION['level'] * 100;
+
+if($_SESSION['xp'] >= $levelUpXp){
+$_SESSION['level']++;
+$_SESSION['xp']=0;
+
+/* TITLE REWARD */
+
+$level = $_SESSION['level'];
+
+if($level>=2) $_SESSION['title']="knight";
+if($level>=5) $_SESSION['title']="earl";
+if($level>=8) $_SESSION['title']="archduke";
+if($level>=12) $_SESSION['title']="king";
+if($level>=18) $_SESSION['title']="emperor";
+
+$levelUpMsg = "🏆 LEVEL UP!\n".
+"Level : ".$_SESSION['level']."\n".
+"Title : ".strtoupper($_SESSION['title']);
+
+}
 
 /*
 =====================================
-BOT COMMAND ENGINE
+BOT COMMAND
 =====================================
 */
 
 $botReply="";
 
-/* MENU COMMAND */
+/* MENU */
 if(str_contains(strtolower($msg),".menu")){
 
-$botReply =
-"💀 REYY CHAT MENU\n\n".
+$botReply=
+"💀 REYY GOD BOT MENU\n\n".
 "Commands:\n".
-".menu = show menu\n".
-".ai = random ai reply\n".
-".title = show your title\n".
-".giveme title = change title (test)\n\n".
-"🏆 TITLE LIST:\n".
-"- npc\n".
-"- knight\n".
-"- earl\n".
-"- archduke\n".
-"- king\n".
-"- emperor\n".
-"- kang spoiler\n".
-"- kang bokep\n".
-"- developer\n".
-"- etmin";
+".menu\n".
+".ai\n".
+".title\n".
+".level\n".
+".xp\n\n".
+"🏆 TITLES:\n".
+"npc → starter\n".
+"knight → lvl2\n".
+"earl → lvl5\n".
+"archduke → lvl8\n".
+"king → lvl12\n".
+"emperor → lvl18\n".
+"kang spoiler\n".
+"kang bokep\n".
+"developer\n".
+"etmin";
 }
 
-/* AI RANDOM */
+/* AI */
 $aiReplies=[
 "Chat enjoy 😈",
-"Stay cool bro 🔥",
+"Stay cool 🔥",
 "I am ReyyBot 🤖",
-"Need help? type .menu",
-"Keep chatting 🧠"
+"Type .menu for help",
+"Keep grinding XP 🧠"
 ];
 
 if(str_contains(strtolower($msg),".ai")){
-$botReply = $aiReplies[array_rand($aiReplies)];
+$botReply=$aiReplies[array_rand($aiReplies)];
 }
 
-/* SHOW TITLE */
-if(str_contains(strtolower($msg),".title")){
-$botReply="🏆 Your Title : ".strtoupper($_SESSION['title']);
+/* SHOW LEVEL */
+if(str_contains(strtolower($msg),".level")){
+$botReply=
+"🏆 STATUS\n".
+"Level: ".$_SESSION['level']."\n".
+"XP: ".$_SESSION['xp']." / ".$levelUpXp."\n".
+"Title: ".strtoupper($_SESSION['title']);
 }
 
-/* CHANGE TITLE TEST */
-if(str_contains(strtolower($msg),"giveme title")){
-foreach($titles as $t){
-if(str_contains(strtolower($msg),$t)){
-$_SESSION['title']=$t;
-$botReply="✅ Title changed to ".strtoupper($t);
-}
-}
+/* SHOW XP */
+if(str_contains(strtolower($msg),".xp")){
+$botReply="🔥 XP : ".$_SESSION['xp']." / ".$levelUpXp;
 }
 
 /*
@@ -127,25 +136,51 @@ PUSHER_APP_ID,
 
 /* SEND USER MESSAGE */
 
-$pusher->trigger("public-chat","new-message",[
+$pusher->trigger(
+"public-chat",
+"new-message",
+[
 "user"=>$user,
 "avatar"=>$avatar,
 "msg"=>$msg,
-"title"=>$_SESSION['title']
-]);
+"title"=>$_SESSION['title'],
+"level"=>$_SESSION['level']
+]
+);
 
 /* BOT REPLY */
 
-if($botReply){
+if(!empty($botReply)){
 
 sleep(1);
 
-$pusher->trigger("public-chat","new-message",[
+$pusher->trigger(
+"public-chat",
+"new-message",
+[
 "user"=>"ChatBot 🤖",
 "avatar"=>"https://api.dicebear.com/7.x/bottts/svg?seed=bot",
 "msg"=>$botReply,
 "title"=>"system"
-]);
+]
+);
+
+}
+
+/* LEVEL UP MESSAGE */
+
+if(isset($levelUpMsg)){
+
+$pusher->trigger(
+"public-chat",
+"new-message",
+[
+"user"=>"System 🏆",
+"avatar"=>"",
+"msg"=>$levelUpMsg,
+"title"=>"system"
+]
+);
 
 }
 
