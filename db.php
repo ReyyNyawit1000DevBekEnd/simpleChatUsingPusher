@@ -1,16 +1,22 @@
 <?php
+
 error_reporting(E_ALL);
-ini_set('display_errors',1);
+ini_set('display_errors', 1);
 
-$host = getenv("MYSQLHOST");
-$user = getenv("MYSQLUSER");
-$pass = getenv("MYSQLPASSWORD");
-$db   = getenv("MYSQLDATABASE");
-$port = getenv("MYSQLPORT");
+$db_url = getenv("MYSQL_URL");
 
-$conn = new mysqli($host,$user,$pass,$db,$port);
+$parsed = parse_url($db_url);
+
+$host = $parsed["host"];
+$user = $parsed["user"];
+$pass = $parsed["pass"];
+$dbname = ltrim($parsed["path"], "/");
+$port = $parsed["port"] ?? 3306;
+
+$conn = new mysqli($host,$user,$pass,$dbname,$port);
 
 if($conn->connect_error){
-die("DB Connection Failed : ".$conn->connect_error);
+    die("DB Connection Failed");
 }
+
 ?>
