@@ -1,17 +1,16 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors',1);
 
-$host = trim(getenv("MYSQLHOST"));
-$user = trim(getenv("MYSQLUSER"));
-$pass = trim(getenv("MYSQLPASSWORD"));
-$db   = trim(getenv("MYSQLDATABASE"));
-$port = trim(getenv("MYSQLPORT"));
+$host = "nozomi.proxy.rlwy.net";
+$user = "root";
+$pass = "HuxKiAmwohhVQvBiUJMUKcZDhqGJYKLf";
+$db   = "railway";
+$port = 51309;
 
-$conn = new mysqli($host, $user, $pass, $db, $port);
+$conn = new mysqli($host,$user,$pass,$db,$port);
 
-if ($conn->connect_error) {
-    http_response_code(500);
-    exit("DB Connection Error");
+if($conn->connect_error){
+    die("DB Connection Failed");
 }
 ?>
