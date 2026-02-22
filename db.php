@@ -1,33 +1,16 @@
 <?php
 
-$db_url = getenv("MYSQL_PUBLIC_URL");
+$host = getenv("MYSQLHOST");
+$user = getenv("MYSQLUSER");
+$pass = getenv("MYSQLPASSWORD");
+$db   = getenv("MYSQLDATABASE");
+$port = getenv("MYSQLPORT");
 
-if(!$db_url){
-    $db_url = getenv("MYSQL_URL");
+if(!$host){
+    die("ENV Database not loaded");
 }
 
-if(!$db_url){
-    die("Database URL not found");
-}
-
-$parsed = preg_replace("#^mysql://#", "", $db_url);
-$parsed = explode("@", $parsed);
-
-list($userpass,$hostdb) = $parsed;
-
-list($user,$pass) = explode(":", $userpass);
-
-list($hostport,$dbname) = explode("/", $hostdb);
-
-list($host,$port) = explode(":", $hostport);
-
-$conn = new mysqli(
-    $host,
-    $user,
-    $pass,
-    $dbname,
-    $port
-);
+$conn = new mysqli($host,$user,$pass,$db,$port);
 
 if($conn->connect_error){
     die("DB Connection Failed : ".$conn->connect_error);
