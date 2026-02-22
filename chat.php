@@ -415,7 +415,7 @@ var pusher = new Pusher(PUSHER_KEY, {
     authEndpoint: "auth.php"
 });
 
-var channel = pusher.subscribe("private-chat-" + conversation_id);
+var channel = var channel = pusher.subscribe("public-chat");
 
 $(document).ready(function(){
     $.get("fetch_messages.php", { conversation_id: conversation_id }, function(data){
